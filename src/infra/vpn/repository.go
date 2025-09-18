@@ -38,10 +38,6 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 
 	defer func() { _ = ptmx.Close() }() // закрываем PTY после завершения
 
-	go func() {
-		_, _ = io.Copy(os.Stdout, ptmx)
-	}()
-
 	time.Sleep(20 * time.Millisecond)
 	io.WriteString(ptmx, "1\n")
 	io.WriteString(ptmx, configID.String()+"\n")
