@@ -136,8 +136,9 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 }
 
 func (r *Repository) CreateServer() error {
-	script := settings.Config.ScriptName
-	path := settings.Config.HomePath
+	config := settings.Config
+	script := config.ScriptName
+	path := config.HomePath
 	scriptPath := path + script
 	if _, err := os.Stat(script); os.IsNotExist(err) {
 		// скачать скрипт
@@ -159,25 +160,12 @@ func (r *Repository) CreateServer() error {
 		return fmt.Errorf("failed chmod: %w", err)
 	}
 
-	cmd = exec.Command("sudo", "bash", "-c", scriptPath)
-	cmd.Env = append(os.Environ(),
-		"AUTO_INSTALL=y",
-		"APPROVE_INSTALL=y",
-		"APPROVE_IP=y",
-		"IPV6_SUPPORT=n",
-		"PORT_CHOICE=2",
-		"PORT=443",          // выбираем 443
-		"PROTOCOL_CHOICE=2", // TCP
-		"DNS=1",
-		"COMPRESSION_ENABLED=n",
-		"CUSTOMIZE_ENC=n",
-		"CLIENT=clientname",
-		"PASS=1",
-	)
+	cmd = exec.Command("sudo", "-E", "bash", "-c", scriptPath)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	cmd.Env = os.Environ()
 	fmt.Println(os.Environ())
 	fmt.Println(cmd.Env)
 
