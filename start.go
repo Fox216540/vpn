@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"vpn/src/infra/vpn"
 )
 
@@ -13,12 +14,12 @@ func main() {
 	//if err != nil {
 	//	fmt.Println(err)
 	//}
-	err := vpn.NewRepository().CreateServer()
-	//fff, err := vpn.NewRepository().Create(uuid.New())
+	//err := vpn.NewRepository().CreateServer()
+	fff, err := vpn.NewRepository().Create(uuid.New())
 	//err := searchClient("foo3")
 	//lines, err := readAndFilterFile(filePath, "foo2")
 	if err != nil {
 		fmt.Println(err)
 	}
-	//fmt.Println(fff)
+	fmt.Println(fff)
 }
