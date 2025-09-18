@@ -34,6 +34,10 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 		"PASS=1",
 	)
 
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
 	if err := cmd.Run(); err != nil {
 		// TODO: return кастомную ошибку
 		fmt.Println("❌ Ошибка запуска:", err)
