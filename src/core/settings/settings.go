@@ -11,6 +11,7 @@ type Setting struct {
 	ClientConfigPath string
 	HomePath         string
 	ScriptName       string
+	FileName         string
 }
 
 func NewSetting() *Setting {
@@ -23,6 +24,7 @@ func NewSetting() *Setting {
 		ClientConfigPath: os.Getenv("CLIENT_CONFIG_PATH"),
 		HomePath:         os.Getenv("HOME_PATH"),
 		ScriptName:       os.Getenv("SCRIPT_NAME"),
+		FileName:         os.Getenv("FILE_NAME"),
 	}
 }
 
