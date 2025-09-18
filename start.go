@@ -14,7 +14,7 @@ func main() {
 	//if err != nil {
 	//	fmt.Println(err)
 	//}
-	//err = vpn.NewRepository().Delete(uuidStr)
+	//err := vpn.NewRepository().CreateServer()
 	fff, err := vpn.NewRepository().Create(uuid.New())
 	//err := searchClient("foo3")
 	//lines, err := readAndFilterFile(filePath, "foo2")

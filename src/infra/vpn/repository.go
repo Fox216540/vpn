@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/creack/pty"
 	"github.com/google/uuid"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 	"vpn/src/core/settings"
 )
 
@@ -21,30 +24,32 @@ func NewRepository() *Repository {
 }
 
 func (r *Repository) Create(configID uuid.UUID) (string, error) {
-	clientName := configID.String()
 	config := settings.Config
 	script := config.ScriptName
 	path := config.HomePath
 	scriptPath := path + script
-	cmd := exec.Command("sudo", "-E", "bash", "-c", scriptPath)
+	fmt.Println(scriptPath)
+	cmd := exec.Command("sudo", "bash", scriptPath)
 
-	cmd.Env = append([]string{"MENU_OPTION=1",
-		"CLIENT=" + configID.String(),
-		"PASS=1"},
-	)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if err := cmd.Run(); err != nil {
-		// TODO: return кастомную ошибку
-		fmt.Println("❌ Ошибка запуска:", err)
-		return "", err
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	vpnPath := filepath.Join(settings.Config.ClientConfigPath, clientName+".ovpn")
-	return vpnPath, nil
+	defer func() { _ = ptmx.Close() }() // закрываем PTY после завершения
+
+	go func() {
+		_, _ = io.Copy(os.Stdout, ptmx)
+	}()
+
+	io.WriteString(ptmx, "1\n")
+	io.WriteString(ptmx, configID.String()+"\n")
+
+	if err = cmd.Wait(); err != nil {
+		log.Fatal(fmt.Errorf("error creating sudo command: %v", err))
+	}
+
+	return "", err
 }
 
 func (r *Repository) writeLines(lines []string, filePath string) error {
@@ -185,7 +190,7 @@ func (r *Repository) CreateServer() error {
 	scriptPath := path + script
 	if _, err := os.Stat(script); os.IsNotExist(err) {
 		// скачать скрипт
-		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh")
+		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Nyr/openvpn-install/master/openvpn-install.sh")
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("failed to download script: %w", err)
 		}
@@ -200,10 +205,31 @@ func (r *Repository) CreateServer() error {
 
 	cmd = exec.Command("sudo", "-E", "bash", "-c", scriptPath)
 
-	cmd.Env = os.Environ()
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run script start: %w", err)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	io.WriteString(stdin, "\n")
+	time.Sleep(1 * time.Second)
+	io.WriteString(stdin, "1\n")
+	io.WriteString(stdin, "\n")
+	io.WriteString(stdin, "2\n")
+	io.WriteString(stdin, "443\n")
+	io.WriteString(stdin, "3\n")
+	io.WriteString(stdin, "test\n")
+	io.WriteString(stdin, "\n")
+	stdin.Close()
+
+	// Ждём завершения
+	if err = cmd.Wait(); err != nil {
+		log.Fatal(err)
 	}
 
 	return nil
