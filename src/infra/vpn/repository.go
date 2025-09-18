@@ -153,21 +153,14 @@ func (r *Repository) CreateServer() error {
 
 	// chmod +x
 	cmd := exec.Command("chmod", "+x", scriptPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed chmod: %w", err)
 	}
 
 	cmd = exec.Command("sudo", "-E", "bash", "-c", scriptPath)
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
 	cmd.Env = os.Environ()
-	fmt.Println(os.Environ())
-	fmt.Println(cmd.Env)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run script start: %w", err)
