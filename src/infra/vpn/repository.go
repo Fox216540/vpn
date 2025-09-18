@@ -42,7 +42,7 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 		_, _ = io.Copy(os.Stdout, ptmx)
 	}()
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	io.WriteString(ptmx, "1\n")
 	io.WriteString(ptmx, configID.String()+"\n")
 
