@@ -161,7 +161,19 @@ func (r *Repository) CreateServer() error {
 
 	cmd = exec.Command("sudo", "bash", "-c", scriptPath)
 	cmd.Env = append(os.Environ(),
-		`APPROVE_IP="y"`)
+		"AUTO_INSTALL=y",
+		"APPROVE_INSTALL=y",
+		"APPROVE_IP=y",
+		"IPV6_SUPPORT=n",
+		"PORT_CHOICE=2",
+		"PORT=443",          // выбираем 443
+		"PROTOCOL_CHOICE=2", // TCP
+		"DNS=1",
+		"COMPRESSION_ENABLED=n",
+		"CUSTOMIZE_ENC=n",
+		"CLIENT=clientname",
+		"PASS=1",
+	)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
