@@ -20,13 +20,21 @@ func NewRepository() *Repository {
 
 func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	clientName := configID.String()
-	cmd := exec.Command("./openvpn-install.sh")
+	config := settings.Config
+	script := config.ScriptName
+	path := config.HomePath
+	scriptPath := path + script
+	cmd := exec.Command("sudo", "-E", "bash", "-c", scriptPath)
 
 	cmd.Env = append(os.Environ(),
 		"MENU_OPTION=1",
 		"CLIENT="+configID.String(),
 		"PASS=1",
 	)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
 		// TODO: return кастомную ошибку
@@ -143,9 +151,6 @@ func (r *Repository) CreateServer() error {
 	if _, err := os.Stat(script); os.IsNotExist(err) {
 		// скачать скрипт
 		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("failed to download script: %w", err)
 		}
