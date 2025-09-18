@@ -28,10 +28,9 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	scriptPath := path + script
 	cmd := exec.Command("sudo", "-E", "bash", "-c", scriptPath)
 
-	cmd.Env = append(os.Environ(),
-		"MENU_OPTION=1",
-		"CLIENT="+configID.String(),
-		"PASS=1",
+	cmd.Env = append([]string{"MENU_OPTION=1",
+		"CLIENT=" + configID.String(),
+		"PASS=1"},
 	)
 
 	cmd.Stdout = os.Stdout
