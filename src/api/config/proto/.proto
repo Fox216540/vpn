@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "src/api/config/proto;config";
+
+import "google/protobuf/empty.proto";
+
+service ConfigService {
+    rpc AddClient(AddClientRequest) returns (AddClientResponse);
+    rpc DeleteClient(DeleteClientRequest) returns (DeleteClientResponse);
+    rpc StartServer(google.protobuf.Empty) returns (StartServerResponse);
+}
+
+message AddClientRequest {
+    string id = 1;
+}
+
+message AddClientResponse {
+    string message = 1;
+    bytes file = 2;
+}
+
+message DeleteClientRequest {
+    string id = 1;
+}
+
+message DeleteClientResponse {
+    string message = 1;
+}
+
+message StartServerResponse {
+    string message = 1;
+}
