@@ -1,18 +1,14 @@
-package vpn
+package config
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/creack/pty"
 	"github.com/google/uuid"
-	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 	"vpn/src/core/settings"
 )
 
@@ -28,25 +24,19 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	script := config.ScriptName
 	path := config.HomePath
 	scriptPath := path + script
-	fmt.Println(scriptPath)
+
 	cmd := exec.Command("sudo", "bash", scriptPath)
+	cmd.Env = append(os.Environ(),
+		"CLIENT_NAME="+configID.String(),
+	)
 
-	ptmx, err := pty.Start(cmd)
-	if err != nil {
-		log.Fatal(err)
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("Error create config")
 	}
 
-	defer func() { _ = ptmx.Close() }() // закрываем PTY после завершения
+	pathFile := path + configID.String() + ".ovpn"
 
-	time.Sleep(20 * time.Millisecond)
-	io.WriteString(ptmx, "1\n")
-	io.WriteString(ptmx, configID.String()+"\n")
-
-	if err = cmd.Wait(); err != nil {
-		log.Fatal(fmt.Errorf("error creating sudo command: %v", err))
-	}
-
-	return "", err
+	return pathFile, nil
 }
 
 func (r *Repository) writeLines(lines []string, filePath string) error {
@@ -214,7 +204,7 @@ func (r *Repository) CreateServer() error {
 	scriptPath := path + script
 	if _, err := os.Stat(script); os.IsNotExist(err) {
 		// скачать скрипт
-		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Nyr/openvpn-install/master/openvpn-install.sh")
+		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Fox216540/openvpn-installer/main/openvpn-install.sh")
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("failed to download script: %w", err)
 		}
@@ -228,30 +218,10 @@ func (r *Repository) CreateServer() error {
 	}
 
 	cmd = exec.Command("sudo", "bash", scriptPath)
+	cmd.Env = os.Environ()
 
-	ptmx, err := pty.Start(cmd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer func() { _ = ptmx.Close() }() // закрываем PTY после завершения
-
-	if err = cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-
-	time.Sleep(20 * time.Millisecond)
-	io.WriteString(ptmx, "1\n")
-	io.WriteString(ptmx, "\n")
-	io.WriteString(ptmx, "2\n")
-	io.WriteString(ptmx, "443\n")
-	io.WriteString(ptmx, "3\n")
-	io.WriteString(ptmx, "test\n")
-	io.WriteString(ptmx, "\n")
-
-	// Ждём завершения
-	if err = cmd.Wait(); err != nil {
-		log.Fatal(err)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed create server: %w", err)
 	}
 
 	return nil
