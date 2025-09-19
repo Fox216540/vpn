@@ -25,7 +25,7 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	path := config.HomePath
 	scriptPath := path + script
 
-	cmd := exec.Command("sudo", "bash", scriptPath)
+	cmd := exec.Command("sudo", "-E", "bash", scriptPath)
 	cmd.Env = append(os.Environ(),
 		"CLIENT_NAME="+configID.String(),
 	)
@@ -217,7 +217,7 @@ func (r *Repository) CreateServer() error {
 		return fmt.Errorf("failed chmod: %w", err)
 	}
 
-	cmd = exec.Command("sudo", "bash", scriptPath)
+	cmd = exec.Command("sudo", "-E", "bash", scriptPath)
 	cmd.Env = os.Environ()
 	fmt.Println(cmd.Env)
 
