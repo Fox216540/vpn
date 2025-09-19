@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -21,16 +22,19 @@ func AuthUnaryInterceptor(h *hasher.Hasher) grpc.UnaryServerInterceptor {
 		if info.FullMethod == "/config.ConfigService/StartServer" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
+				fmt.Println("25")
 				return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
 			}
 
 			authHeader := md.Get("authorization")
 			if len(authHeader) == 0 || !strings.HasPrefix(authHeader[0], "Bearer ") {
+				fmt.Println("31")
 				return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
 			}
 
 			tokenReceived := strings.TrimPrefix(authHeader[0], "Bearer ")
 			if err := h.Verify(tokenReceived, settings.Config.HashPass); err != nil {
+				fmt.Println("37")
 				return nil, status.Errorf(codes.Unauthenticated, "invalid token")
 			}
 		}
