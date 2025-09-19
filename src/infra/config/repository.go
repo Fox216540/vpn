@@ -219,6 +219,7 @@ func (r *Repository) CreateServer() error {
 
 	cmd = exec.Command("sudo", "bash", scriptPath)
 	cmd.Env = os.Environ()
+	fmt.Println(cmd.Env)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed create server: %w", err)
