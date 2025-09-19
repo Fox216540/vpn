@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"strings"
-	"vpn/src/core/settings"
 	"vpn/src/infra/hasher"
 )
 
@@ -33,7 +32,7 @@ func AuthUnaryInterceptor(h *hasher.Hasher) grpc.UnaryServerInterceptor {
 			}
 
 			tokenReceived := strings.TrimPrefix(authHeader[0], "Bearer ")
-			if err := h.Verify(tokenReceived, settings.Config.HashPass); err != nil {
+			if err := h.Verify(tokenReceived); err != nil {
 				fmt.Println("37")
 				return nil, status.Errorf(codes.Unauthenticated, "invalid token")
 			}
