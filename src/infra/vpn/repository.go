@@ -95,8 +95,9 @@ func (r *Repository) scanFile(filePath string) ([]string, error) {
 			lines = append(lines, line)
 		}
 	}
+	fmt.Println(lines)
 	if err = scanner.Err(); err != nil {
-		return nil, fmt.Errorf("93", err)
+		return nil, fmt.Errorf("99", err)
 	}
 	return lines, nil
 }
@@ -105,22 +106,13 @@ func (r *Repository) cleanDeletedIDs() error {
 	filePath := settings.Config.FilePath
 	lines, err := r.scanFile(filePath)
 	if err != nil {
-		return fmt.Errorf("102", err)
+		return fmt.Errorf("108", err)
 	}
 	return r.writeLines(lines, filePath)
 }
 
-func (r *Repository) deleteRSA(configID uuid.UUID) error {
-	dir := "/etc/openvpn/easy-rsa"
-
-	// 1. Проверяем существование easyrsa
-	easyrsaPath := filepath.Join(dir, "easyrsa")
-	if _, err := os.Stat(easyrsaPath); os.IsNotExist(err) {
-		return fmt.Errorf("easyrsa not found in %s", dir)
-	}
-
-	// 2. Отзываем сертификат
-	cmd := exec.Command("sudo", easyrsaPath, "--batch", "revoke", configID.String())
+func (r *Repository) recallCertificate(dir, path string, ID uuid.UUID) error {
+	cmd := exec.Command("sudo", path, "--batch", "revoke", ID.String())
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -129,37 +121,72 @@ func (r *Repository) deleteRSA(configID uuid.UUID) error {
 		return fmt.Errorf("revoke failed: %w", err)
 	}
 
-	// 3. Генерируем CRL (Certificate Revocation List)
-	//crlCmd := exec.Command(easyrsaPath, "--batch", "gen-crl")
-	//crlCmd.Dir = dir
-	//crlCmd.Stdout = os.Stdout
-	//crlCmd.Stderr = os.Stderr
-	//
-	//if err := crlCmd.Run(); err != nil {
-	//	return fmt.Errorf("CRL generation failed: %w", err)
-	//}
+	return nil
+}
 
-	// 4. Копируем CRL в директорию OpenVPN (требует sudo)
-	//copyCmd := exec.Command("sudo", "cp",
-	//	filepath.Join(dir, "pki", "crl.pem"),
-	//	"/etc/openvpn/server/crl.pem")
-	//
-	//if err := copyCmd.Run(); err != nil {
-	//	return fmt.Errorf("CRL copy failed: %w", err)
-	//}
+func (r *Repository) generateCertificate(dir, path string) error {
+	crlCmd := exec.Command("sudo", path, "--batch", "--days=3650", "gen-crl")
+	crlCmd.Dir = dir
+	crlCmd.Stdout = os.Stdout
+	crlCmd.Stderr = os.Stderr
 
-	// 5. Удаляем файлы сертификата и ключа
-	filesToRemove := []string{
-		filepath.Join(dir, "pki", "issued", configID.String()+".crt"),
-		filepath.Join(dir, "pki", "private", configID.String()+".key"),
-		filepath.Join(dir, "pki", "reqs", configID.String()+".req"), // обычно есть и этот файл
+	if err := crlCmd.Run(); err != nil {
+		return fmt.Errorf("CRL generation failed: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) copyCRL(dir string) error {
+	copyCmd := exec.Command("sudo", "cp",
+		filepath.Join(dir, "pki", "crl.pem"),
+		"/etc/openvpn/server/crl.pem")
+
+	if err := copyCmd.Run(); err != nil {
+		return fmt.Errorf("CRL copy failed: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) removeCertFiles(dir string, ID uuid.UUID) error {
+	files := []string{
+		filepath.Join(dir, "pki", "issued", ID.String()+".crt"),
+		filepath.Join(dir, "pki", "private", ID.String()+".key"),
+		filepath.Join(dir, "pki", "reqs", ID.String()+".req"),
 	}
 
-	for _, file := range filesToRemove {
-		if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
-			log.Printf("Warning: could not remove %s: %v", file, err)
-			// Не прерываем выполнение, если файл не найден
+	for _, f := range files {
+		err := os.Remove(f) // игнорируем ошибки, можно логировать
+		if err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+func (r *Repository) deleteRSA(configID uuid.UUID) error {
+	dir := "/etc/openvpn/server/easy-rsa"
+
+	// 1. Проверяем существование easyrsa
+	easyrsaPath := filepath.Join(dir, "easyrsa")
+
+	//2. Отзываем сертификат
+	if err := r.recallCertificate(dir, easyrsaPath, configID); err != nil {
+		return err
+	}
+
+	//3. Генерируем CRL (Certificate Revocation List)
+	if err := r.generateCertificate(dir, easyrsaPath); err != nil {
+		return err
+	}
+
+	//4. Копируем CRL в директорию OpenVPN (требует sudo)
+	if err := r.copyCRL(dir); err != nil {
+		return err
+	}
+
+	// 5. Удаляем файлы сертификата и ключа
+	if err := r.removeCertFiles(dir, configID); err != nil {
+		return err
 	}
 	return nil
 }
@@ -200,29 +227,27 @@ func (r *Repository) CreateServer() error {
 		return fmt.Errorf("failed chmod: %w", err)
 	}
 
-	cmd = exec.Command("sudo", "-E", "bash", "-c", scriptPath)
+	cmd = exec.Command("sudo", "bash", scriptPath)
 
-	stdin, err := cmd.StdinPipe()
+	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	defer func() { _ = ptmx.Close() }() // закрываем PTY после завершения
 
-	if err := cmd.Start(); err != nil {
+	if err = cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	io.WriteString(stdin, "\n")
-	time.Sleep(1 * time.Second)
-	io.WriteString(stdin, "1\n")
-	io.WriteString(stdin, "\n")
-	io.WriteString(stdin, "2\n")
-	io.WriteString(stdin, "443\n")
-	io.WriteString(stdin, "3\n")
-	io.WriteString(stdin, "test\n")
-	io.WriteString(stdin, "\n")
-	stdin.Close()
+
+	time.Sleep(20 * time.Millisecond)
+	io.WriteString(ptmx, "1\n")
+	io.WriteString(ptmx, "\n")
+	io.WriteString(ptmx, "2\n")
+	io.WriteString(ptmx, "443\n")
+	io.WriteString(ptmx, "3\n")
+	io.WriteString(ptmx, "test\n")
+	io.WriteString(ptmx, "\n")
 
 	// Ждём завершения
 	if err = cmd.Wait(); err != nil {
