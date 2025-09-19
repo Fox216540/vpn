@@ -7,11 +7,11 @@ import (
 )
 
 type Setting struct {
-	FilePath         string
-	ClientConfigPath string
-	HomePath         string
-	ScriptName       string
-	FileName         string
+	FilePath   string
+	HomePath   string
+	ScriptName string
+	FileName   string
+	HashPass   string
 }
 
 func NewSetting() *Setting {
@@ -20,11 +20,11 @@ func NewSetting() *Setting {
 		log.Fatalf("Error loading .env file")
 	}
 	return &Setting{
-		FilePath:         os.Getenv("FILE_PATH"),
-		ClientConfigPath: os.Getenv("CLIENT_CONFIG_PATH"),
-		HomePath:         os.Getenv("HOME_PATH"),
-		ScriptName:       os.Getenv("SCRIPT_NAME"),
-		FileName:         os.Getenv("FILE_NAME"),
+		FilePath:   os.Getenv("FILE_PATH"),
+		HomePath:   os.Getenv("HOME_PATH"),
+		ScriptName: os.Getenv("SCRIPT_NAME"),
+		FileName:   os.Getenv("FILE_NAME"),
+		HashPass:   os.Getenv("HASH_PASS"),
 	}
 }
 
