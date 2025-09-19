@@ -59,6 +59,7 @@ func (r *Repository) CreateServer() error {
 		// скачать скрипт
 		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Fox216540/openvpn-installer/main/openvpn-install.sh")
 		if err = cmd.Run(); err != nil {
+			fmt.Println("Error creating server")
 			return fmt.Errorf("failed to download script: %w", err)
 		}
 	}
@@ -67,6 +68,7 @@ func (r *Repository) CreateServer() error {
 	cmd := exec.Command("chmod", "+x", scriptPath)
 
 	if err := cmd.Run(); err != nil {
+		fmt.Println("Error creating server 71")
 		return fmt.Errorf("failed chmod: %w", err)
 	}
 
@@ -74,6 +76,7 @@ func (r *Repository) CreateServer() error {
 	cmd.Env = os.Environ()
 
 	if err := cmd.Run(); err != nil {
+		fmt.Println("Error creating server 79")
 		return fmt.Errorf("failed create server: %w", err)
 	}
 
