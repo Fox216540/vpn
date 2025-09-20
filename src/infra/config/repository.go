@@ -47,7 +47,11 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 		"CLIENT_NAME="+configID.String(),
 	)
 
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	if err := cmd.Run(); err != nil {
+		fmt.Println("Error delete config")
 		fmt.Errorf("Error delete config")
 		return err
 	}
