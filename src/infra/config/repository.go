@@ -47,6 +47,11 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 		"CLIENT_NAME="+configID.String(),
 	)
 
+	if err := cmd.Run(); err != nil {
+		fmt.Errorf("Error delete config")
+		return err
+	}
+
 	return nil
 }
 
@@ -74,9 +79,6 @@ func (r *Repository) CreateServer() error {
 
 	cmd = exec.Command("sudo", "-E", "bash", scriptPath)
 	cmd.Env = os.Environ()
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
 		fmt.Println("Error creating server 79")
