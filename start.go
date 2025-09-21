@@ -5,7 +5,9 @@ import (
 	"log"
 	"net"
 	"vpn/src/api/config"
-	pb "vpn/src/api/config/proto"
+	pbConfig "vpn/src/api/config/proto"
+	"vpn/src/api/traffic"
+	pbTraffic "vpn/src/api/traffic/proto"
 	"vpn/src/core/interceptor"
 	"vpn/src/infra/hasher"
 )
@@ -16,12 +18,14 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	handler := config.NewHandler()
+	configHandler := config.NewHandler()
 	h := hasher.NewHasher()
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptor.AuthUnaryInterceptor(h)),
 	)
-	pb.RegisterConfigServiceServer(server, handler)
+	trafficHandler := traffic.NewHandler()
+	pbConfig.RegisterConfigServiceServer(server, configHandler)
+	pbTraffic.RegisterTrafficServiceServer(server, trafficHandler)
 
 	log.Println("gRPC server is running on :50051")
 	if err := server.Serve(lis); err != nil {
