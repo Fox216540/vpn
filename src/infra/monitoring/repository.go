@@ -108,14 +108,21 @@ func (r *Repository) startWriterMemoryPercent() {
 
 	interval, err := strconv.Atoi(intervalStr)
 
-	v, err := mem.VirtualMemory()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for {
+		v, err := mem.VirtualMemory()
+		if err != nil {
+			log.Println("error getting memory:", err)
+			continue
+		}
+
 		r.mu.Lock()
 		r.data.MemoryPercentUsage = v.UsedPercent
 		r.mu.Unlock()
+
 		time.Sleep(time.Duration(interval) * time.Second)
 	}
 }
