@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package monitoring;
+
+option go_package = "src/api/monitoring/proto;monitoring";
+
+import "google/protobuf/empty.proto";
+
+service MonitoringService {
+	rpc GetTotalMbps(google.protobuf.Empty) returns (GetTotalMbpsResponse);
+	rpc GetSplitMbps(google.protobuf.Empty) returns (GetSplitMbpsResponse);
+	rpc GetConnections(google.protobuf.Empty) returns (GetConnectionsResponse);
+	rpc GetCPUPercent(google.protobuf.Empty) returns (GetCPUPercentResponse);
+	rpc GetMemoryPercent(google.protobuf.Empty) returns (GetMemoryPercentResponse);
+}
+
+message GetTotalMbpsResponse {
+	double mbps = 1;
+}
+
+message GetSplitMbpsResponse {
+	double down = 1;
+	double up = 2;
+}
+
+message GetConnectionsResponse {
+	int32 connections = 1;
+}
+
+message GetCPUPercentResponse {
+	double percent = 1;
+}
+
+message GetMemoryPercentResponse {
+	double percent = 1;
+}
