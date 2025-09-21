@@ -6,8 +6,8 @@ import (
 	"net"
 	"vpn/src/api/config"
 	pbConfig "vpn/src/api/config/proto"
-	"vpn/src/api/traffic"
-	pbTraffic "vpn/src/api/traffic/proto"
+	"vpn/src/api/monitoring"
+	pbMonitoring "vpn/src/api/monitoring/proto"
 	"vpn/src/core/interceptor"
 	"vpn/src/infra/hasher"
 )
@@ -23,9 +23,9 @@ func main() {
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptor.AuthUnaryInterceptor(h)),
 	)
-	trafficHandler := traffic.NewHandler()
+	monitoringHandler := monitoring.NewHandler()
 	pbConfig.RegisterConfigServiceServer(server, configHandler)
-	pbTraffic.RegisterTrafficServiceServer(server, trafficHandler)
+	pbMonitoring.RegisterMonitoringServiceServer(server, monitoringHandler)
 
 	log.Println("gRPC server is running on :50051")
 	if err := server.Serve(lis); err != nil {
