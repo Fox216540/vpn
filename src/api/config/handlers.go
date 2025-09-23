@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -50,7 +51,25 @@ func (h *Handler) DeleteClient(ctx context.Context, req *pb.DeleteClientRequest)
 	return &pb.DeleteClientResponse{
 		Message: "Good",
 	}, nil
+}
 
+func (h *Handler) DeleteClients(ctx context.Context, req *pb.DeleteClientsRequest) (*pb.DeleteClientsResponse, error) {
+	uuidIDs := make([]uuid.UUID, len(req.Ids))
+	for i, idStr := range req.Ids {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			fmt.Printf("Invalid UUID at index %d: %v\n", i, err)
+			continue
+		}
+		uuidIDs[i] = id
+	}
+
+	if err := h.service.DeleteConfigs(uuidIDs); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &pb.DeleteClientsResponse{
+		Message: "Good",
+	}, nil
 }
 
 func (h *Handler) StartServer(ctx context.Context, req *emptypb.Empty) (*pb.StartServerResponse, error) {
