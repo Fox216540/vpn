@@ -22,6 +22,94 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type DeleteClientsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteClientsRequest) Reset() {
+	*x = DeleteClientsRequest{}
+	mi := &file_src_api_config_proto__proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteClientsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteClientsRequest) ProtoMessage() {}
+
+func (x *DeleteClientsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_src_api_config_proto__proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteClientsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteClientsRequest) Descriptor() ([]byte, []int) {
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{0}
+}
+
+func (x *DeleteClientsRequest) GetIds() []string {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+type DeleteClientsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteClientsResponse) Reset() {
+	*x = DeleteClientsResponse{}
+	mi := &file_src_api_config_proto__proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteClientsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteClientsResponse) ProtoMessage() {}
+
+func (x *DeleteClientsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_src_api_config_proto__proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteClientsResponse.ProtoReflect.Descriptor instead.
+func (*DeleteClientsResponse) Descriptor() ([]byte, []int) {
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DeleteClientsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type AddClientRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -31,7 +119,7 @@ type AddClientRequest struct {
 
 func (x *AddClientRequest) Reset() {
 	*x = AddClientRequest{}
-	mi := &file_src_api_config_proto__proto_msgTypes[0]
+	mi := &file_src_api_config_proto__proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +131,7 @@ func (x *AddClientRequest) String() string {
 func (*AddClientRequest) ProtoMessage() {}
 
 func (x *AddClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_src_api_config_proto__proto_msgTypes[0]
+	mi := &file_src_api_config_proto__proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +144,7 @@ func (x *AddClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddClientRequest.ProtoReflect.Descriptor instead.
 func (*AddClientRequest) Descriptor() ([]byte, []int) {
-	return file_src_api_config_proto__proto_rawDescGZIP(), []int{0}
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AddClientRequest) GetId() string {
@@ -76,7 +164,7 @@ type AddClientResponse struct {
 
 func (x *AddClientResponse) Reset() {
 	*x = AddClientResponse{}
-	mi := &file_src_api_config_proto__proto_msgTypes[1]
+	mi := &file_src_api_config_proto__proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +176,7 @@ func (x *AddClientResponse) String() string {
 func (*AddClientResponse) ProtoMessage() {}
 
 func (x *AddClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_src_api_config_proto__proto_msgTypes[1]
+	mi := &file_src_api_config_proto__proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +189,7 @@ func (x *AddClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddClientResponse.ProtoReflect.Descriptor instead.
 func (*AddClientResponse) Descriptor() ([]byte, []int) {
-	return file_src_api_config_proto__proto_rawDescGZIP(), []int{1}
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AddClientResponse) GetMessage() string {
@@ -127,7 +215,7 @@ type DeleteClientRequest struct {
 
 func (x *DeleteClientRequest) Reset() {
 	*x = DeleteClientRequest{}
-	mi := &file_src_api_config_proto__proto_msgTypes[2]
+	mi := &file_src_api_config_proto__proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +227,7 @@ func (x *DeleteClientRequest) String() string {
 func (*DeleteClientRequest) ProtoMessage() {}
 
 func (x *DeleteClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_src_api_config_proto__proto_msgTypes[2]
+	mi := &file_src_api_config_proto__proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +240,7 @@ func (x *DeleteClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteClientRequest.ProtoReflect.Descriptor instead.
 func (*DeleteClientRequest) Descriptor() ([]byte, []int) {
-	return file_src_api_config_proto__proto_rawDescGZIP(), []int{2}
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteClientRequest) GetId() string {
@@ -171,7 +259,7 @@ type DeleteClientResponse struct {
 
 func (x *DeleteClientResponse) Reset() {
 	*x = DeleteClientResponse{}
-	mi := &file_src_api_config_proto__proto_msgTypes[3]
+	mi := &file_src_api_config_proto__proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -183,7 +271,7 @@ func (x *DeleteClientResponse) String() string {
 func (*DeleteClientResponse) ProtoMessage() {}
 
 func (x *DeleteClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_src_api_config_proto__proto_msgTypes[3]
+	mi := &file_src_api_config_proto__proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -196,7 +284,7 @@ func (x *DeleteClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteClientResponse.ProtoReflect.Descriptor instead.
 func (*DeleteClientResponse) Descriptor() ([]byte, []int) {
-	return file_src_api_config_proto__proto_rawDescGZIP(), []int{3}
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteClientResponse) GetMessage() string {
@@ -215,7 +303,7 @@ type StartServerResponse struct {
 
 func (x *StartServerResponse) Reset() {
 	*x = StartServerResponse{}
-	mi := &file_src_api_config_proto__proto_msgTypes[4]
+	mi := &file_src_api_config_proto__proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -227,7 +315,7 @@ func (x *StartServerResponse) String() string {
 func (*StartServerResponse) ProtoMessage() {}
 
 func (x *StartServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_src_api_config_proto__proto_msgTypes[4]
+	mi := &file_src_api_config_proto__proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -240,7 +328,7 @@ func (x *StartServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartServerResponse.ProtoReflect.Descriptor instead.
 func (*StartServerResponse) Descriptor() ([]byte, []int) {
-	return file_src_api_config_proto__proto_rawDescGZIP(), []int{4}
+	return file_src_api_config_proto__proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StartServerResponse) GetMessage() string {
@@ -254,7 +342,11 @@ var File_src_api_config_proto__proto protoreflect.FileDescriptor
 
 const file_src_api_config_proto__proto_rawDesc = "" +
 	"\n" +
-	"\x1bsrc/api/config/proto/.proto\x12\x06config\x1a\x1bgoogle/protobuf/empty.proto\"\"\n" +
+	"\x1bsrc/api/config/proto/.proto\x12\x06config\x1a\x1bgoogle/protobuf/empty.proto\"(\n" +
+	"\x14DeleteClientsRequest\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"1\n" +
+	"\x15DeleteClientsResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\"\n" +
 	"\x10AddClientRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"A\n" +
 	"\x11AddClientResponse\x12\x18\n" +
@@ -265,10 +357,11 @@ const file_src_api_config_proto__proto_rawDesc = "" +
 	"\x14DeleteClientResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"/\n" +
 	"\x13StartServerResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2\xe0\x01\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xae\x02\n" +
 	"\rConfigService\x12@\n" +
 	"\tAddClient\x12\x18.config.AddClientRequest\x1a\x19.config.AddClientResponse\x12I\n" +
-	"\fDeleteClient\x12\x1b.config.DeleteClientRequest\x1a\x1c.config.DeleteClientResponse\x12B\n" +
+	"\fDeleteClient\x12\x1b.config.DeleteClientRequest\x1a\x1c.config.DeleteClientResponse\x12L\n" +
+	"\rDeleteClients\x12\x1c.config.DeleteClientsRequest\x1a\x1d.config.DeleteClientsResponse\x12B\n" +
 	"\vStartServer\x12\x16.google.protobuf.Empty\x1a\x1b.config.StartServerResponseB\x1dZ\x1bsrc/api/config/proto;configb\x06proto3"
 
 var (
@@ -283,24 +376,28 @@ func file_src_api_config_proto__proto_rawDescGZIP() []byte {
 	return file_src_api_config_proto__proto_rawDescData
 }
 
-var file_src_api_config_proto__proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_src_api_config_proto__proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_src_api_config_proto__proto_goTypes = []any{
-	(*AddClientRequest)(nil),     // 0: config.AddClientRequest
-	(*AddClientResponse)(nil),    // 1: config.AddClientResponse
-	(*DeleteClientRequest)(nil),  // 2: config.DeleteClientRequest
-	(*DeleteClientResponse)(nil), // 3: config.DeleteClientResponse
-	(*StartServerResponse)(nil),  // 4: config.StartServerResponse
-	(*emptypb.Empty)(nil),        // 5: google.protobuf.Empty
+	(*DeleteClientsRequest)(nil),  // 0: config.DeleteClientsRequest
+	(*DeleteClientsResponse)(nil), // 1: config.DeleteClientsResponse
+	(*AddClientRequest)(nil),      // 2: config.AddClientRequest
+	(*AddClientResponse)(nil),     // 3: config.AddClientResponse
+	(*DeleteClientRequest)(nil),   // 4: config.DeleteClientRequest
+	(*DeleteClientResponse)(nil),  // 5: config.DeleteClientResponse
+	(*StartServerResponse)(nil),   // 6: config.StartServerResponse
+	(*emptypb.Empty)(nil),         // 7: google.protobuf.Empty
 }
 var file_src_api_config_proto__proto_depIdxs = []int32{
-	0, // 0: config.ConfigService.AddClient:input_type -> config.AddClientRequest
-	2, // 1: config.ConfigService.DeleteClient:input_type -> config.DeleteClientRequest
-	5, // 2: config.ConfigService.StartServer:input_type -> google.protobuf.Empty
-	1, // 3: config.ConfigService.AddClient:output_type -> config.AddClientResponse
-	3, // 4: config.ConfigService.DeleteClient:output_type -> config.DeleteClientResponse
-	4, // 5: config.ConfigService.StartServer:output_type -> config.StartServerResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	2, // 0: config.ConfigService.AddClient:input_type -> config.AddClientRequest
+	4, // 1: config.ConfigService.DeleteClient:input_type -> config.DeleteClientRequest
+	0, // 2: config.ConfigService.DeleteClients:input_type -> config.DeleteClientsRequest
+	7, // 3: config.ConfigService.StartServer:input_type -> google.protobuf.Empty
+	3, // 4: config.ConfigService.AddClient:output_type -> config.AddClientResponse
+	5, // 5: config.ConfigService.DeleteClient:output_type -> config.DeleteClientResponse
+	1, // 6: config.ConfigService.DeleteClients:output_type -> config.DeleteClientsResponse
+	6, // 7: config.ConfigService.StartServer:output_type -> config.StartServerResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -317,7 +414,7 @@ func file_src_api_config_proto__proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_src_api_config_proto__proto_rawDesc), len(file_src_api_config_proto__proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

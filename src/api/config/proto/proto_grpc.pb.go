@@ -20,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ConfigService_AddClient_FullMethodName    = "/config.ConfigService/AddClient"
-	ConfigService_DeleteClient_FullMethodName = "/config.ConfigService/DeleteClient"
-	ConfigService_StartServer_FullMethodName  = "/config.ConfigService/StartServer"
+	ConfigService_AddClient_FullMethodName     = "/config.ConfigService/AddClient"
+	ConfigService_DeleteClient_FullMethodName  = "/config.ConfigService/DeleteClient"
+	ConfigService_DeleteClients_FullMethodName = "/config.ConfigService/DeleteClients"
+	ConfigService_StartServer_FullMethodName   = "/config.ConfigService/StartServer"
 )
 
 // ConfigServiceClient is the client API for ConfigService service.
@@ -31,6 +32,7 @@ const (
 type ConfigServiceClient interface {
 	AddClient(ctx context.Context, in *AddClientRequest, opts ...grpc.CallOption) (*AddClientResponse, error)
 	DeleteClient(ctx context.Context, in *DeleteClientRequest, opts ...grpc.CallOption) (*DeleteClientResponse, error)
+	DeleteClients(ctx context.Context, in *DeleteClientsRequest, opts ...grpc.CallOption) (*DeleteClientsResponse, error)
 	StartServer(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StartServerResponse, error)
 }
 
@@ -62,6 +64,16 @@ func (c *configServiceClient) DeleteClient(ctx context.Context, in *DeleteClient
 	return out, nil
 }
 
+func (c *configServiceClient) DeleteClients(ctx context.Context, in *DeleteClientsRequest, opts ...grpc.CallOption) (*DeleteClientsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteClientsResponse)
+	err := c.cc.Invoke(ctx, ConfigService_DeleteClients_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configServiceClient) StartServer(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StartServerResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StartServerResponse)
@@ -78,6 +90,7 @@ func (c *configServiceClient) StartServer(ctx context.Context, in *emptypb.Empty
 type ConfigServiceServer interface {
 	AddClient(context.Context, *AddClientRequest) (*AddClientResponse, error)
 	DeleteClient(context.Context, *DeleteClientRequest) (*DeleteClientResponse, error)
+	DeleteClients(context.Context, *DeleteClientsRequest) (*DeleteClientsResponse, error)
 	StartServer(context.Context, *emptypb.Empty) (*StartServerResponse, error)
 	mustEmbedUnimplementedConfigServiceServer()
 }
@@ -94,6 +107,9 @@ func (UnimplementedConfigServiceServer) AddClient(context.Context, *AddClientReq
 }
 func (UnimplementedConfigServiceServer) DeleteClient(context.Context, *DeleteClientRequest) (*DeleteClientResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteClient not implemented")
+}
+func (UnimplementedConfigServiceServer) DeleteClients(context.Context, *DeleteClientsRequest) (*DeleteClientsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteClients not implemented")
 }
 func (UnimplementedConfigServiceServer) StartServer(context.Context, *emptypb.Empty) (*StartServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartServer not implemented")
@@ -155,6 +171,24 @@ func _ConfigService_DeleteClient_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConfigService_DeleteClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteClientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).DeleteClients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConfigService_DeleteClients_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).DeleteClients(ctx, req.(*DeleteClientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ConfigService_StartServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -187,6 +221,10 @@ var ConfigService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteClient",
 			Handler:    _ConfigService_DeleteClient_Handler,
+		},
+		{
+			MethodName: "DeleteClients",
+			Handler:    _ConfigService_DeleteClients_Handler,
 		},
 		{
 			MethodName: "StartServer",
