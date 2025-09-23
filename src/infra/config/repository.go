@@ -379,6 +379,7 @@ func (r *Repository) CreateServer() error {
 		// скачать скрипт
 		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Fox216540/openvpn-installer/main/openvpn-install.sh")
 		if err = cmd.Run(); err != nil {
+			fmt.Println(err)
 			return NewInvalidDownloadScript(err)
 		}
 		cmd.Stdout = os.Stdout
