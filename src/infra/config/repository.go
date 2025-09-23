@@ -381,6 +381,8 @@ func (r *Repository) CreateServer() error {
 		if err = cmd.Run(); err != nil {
 			return NewInvalidDownloadScript(err)
 		}
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 	}
 
 	// chmod +x
