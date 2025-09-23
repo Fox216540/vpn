@@ -221,19 +221,15 @@ func (r *Repository) disconnectClient(client string) error {
 // Упрощенные финальные операции
 func (r *Repository) finalizeCRL(clientSet map[string]struct{}, rsaPath string) error {
 	pkiDir := rsaPath + "/pki"
-	g, _ := errgroup.WithContext(context.Background())
 
-	g.Go(func() error {
-		return r.updateIndexFile(clientSet, pkiDir)
-	})
-
-	g.Go(func() error {
-		return r.generateNewCRL(rsaPath)
-	})
-
-	if err := g.Wait(); err != nil {
-		return fmt.Errorf("финальные операции: %w", err)
+	if err := r.updateIndexFile(clientSet, pkiDir); err != nil {
+		return err
 	}
+
+	if err := r.generateNewCRL(rsaPath); err != nil {
+		return err
+	}
+
 	return nil
 }
 
