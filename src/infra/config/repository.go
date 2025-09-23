@@ -399,6 +399,8 @@ func (r *Repository) CreateServer() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
+	fmt.Println(os.Environ())
+	fmt.Println(cmd.Env)
 
 	if err := cmd.Run(); err != nil {
 		return NewInvalidCreateServer(err)
