@@ -64,7 +64,8 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 }
 
 func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
-	pkiDir := "/etc/openvpn/server/easy-rsa/pki"
+	rsaPath := "/etc/openvpn/server/easy-rsa/"
+	pkiDir := rsaPath + "pki"
 	workDir := fmt.Sprintf("/tmp/ovpn_revoke_%d", os.Getpid())
 
 	clientStrings, clientSet := r.convertUUIDs(ids)
@@ -83,7 +84,7 @@ func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
 	}
 
 	// Финальные операции
-	if err := r.finalizeCRL(clientSet, pkiDir); err != nil {
+	if err := r.finalizeCRL(clientSet, rsaPath); err != nil {
 		return err
 	}
 
@@ -156,7 +157,8 @@ func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error)
 }
 
 // Упрощенные финальные операции
-func (r *Repository) finalizeCRL(clientSet map[string]struct{}, pkiDir string) error {
+func (r *Repository) finalizeCRL(clientSet map[string]struct{}, rsaPath string) error {
+	pkiDir := rsaPath + "/pki"
 	g, _ := errgroup.WithContext(context.Background())
 
 	g.Go(func() error {
@@ -164,7 +166,7 @@ func (r *Repository) finalizeCRL(clientSet map[string]struct{}, pkiDir string) e
 	})
 
 	g.Go(func() error {
-		return r.generateNewCRL(pkiDir)
+		return r.generateNewCRL(rsaPath)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -248,14 +250,16 @@ func (r *Repository) writeFileWithBackup(path string, lines []string, backup []b
 }
 
 // Генерация нового CRL
-func (r *Repository) generateNewCRL(pkiDir string) error {
+func (r *Repository) generateNewCRL(rsaPath string) error {
 	// Генерируем CRL через easyrsa
 	cmd := exec.Command("./easyrsa", "--batch", "--days=3650", "gen-crl")
-	cmd.Dir = pkiDir
+	cmd.Dir = rsaPath
 
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("ошибка выполнения easyrsa: %w, output: %s", err, string(output))
 	}
+
+	pkiDir := rsaPath + "/pki"
 
 	// Копируем crl.pem в директорию OpenVPN
 	srcCRL := filepath.Join(pkiDir, "crl.pem")
