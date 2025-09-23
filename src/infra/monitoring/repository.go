@@ -35,7 +35,7 @@ func (r *Repository) searchTun(nameTun string) (net.IOCountersStat, error) {
 	counters, err := net.IOCounters(true)
 	if err != nil {
 		//TODO: log error ЛОГГЕР
-		log.Fatalf("Error getting IO counters: %v", err)
+		log.Printf("Error getting IO counters: %v", err)
 	}
 	for _, c := range counters {
 		if c.Name == nameTun {
@@ -61,7 +61,8 @@ func (r *Repository) startWriterTraffic() {
 		c, err := r.searchTun("tun0")
 		if err != nil {
 			//TODO: log error ЛОГГЕР
-			log.Fatalf("Error getting IO counters: %v", err)
+			log.Printf("Error getting IO counters: %v", err)
+			continue
 		}
 
 		rxDiff := c.BytesRecv - prevRx
