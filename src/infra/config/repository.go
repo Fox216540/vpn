@@ -339,6 +339,8 @@ func (r *Repository) revokeClient(client string, pkiDir string) error {
 		filepath.Join(pkiDir, "private", client+".key"),
 		filepath.Join(pkiDir, "reqs", client+".req"),
 		filepath.Join(pkiDir, "issued", client+".crt"),
+		filepath.Join(pkiDir, "inline", client+".inline"),
+		filepath.Join(pkiDir, "inline/private", client+".inline"),
 	}
 
 	var removed bool
