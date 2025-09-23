@@ -64,7 +64,7 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 }
 
 func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
-	pkiDir := "/etc/openvpn/server/easy-rsa"
+	pkiDir := "/etc/openvpn/server/easy-rsa/pki"
 	workDir := fmt.Sprintf("/tmp/ovpn_revoke_%d", os.Getpid())
 
 	clientStrings, clientSet := r.convertUUIDs(ids)
