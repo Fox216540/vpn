@@ -1,8 +1,8 @@
 package hasher
 
 import (
-	"fmt"
 	"vpn/src/core/settings"
+	"vpn/src/domain/hasher"
 )
 
 type Hasher struct{}
@@ -13,7 +13,7 @@ func NewHasher() *Hasher {
 
 func (h *Hasher) Verify(hash string) error {
 	if hash != settings.Config.HashPass {
-		return fmt.Errorf("invalid hash")
+		return hasher.NewWrongPasswordError(nil)
 	}
 	return nil
 }
