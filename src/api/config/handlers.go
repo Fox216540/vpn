@@ -65,6 +65,7 @@ func (h *Handler) DeleteClients(ctx context.Context, req *pb.DeleteClientsReques
 	}
 
 	if err := h.service.DeleteConfigs(uuidIDs); err != nil {
+		fmt.Println(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.DeleteClientsResponse{
