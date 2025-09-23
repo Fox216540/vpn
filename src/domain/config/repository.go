@@ -7,5 +7,6 @@ import (
 type Repository interface {
 	Create(configID uuid.UUID) (string, error)
 	Delete(configID uuid.UUID) error
+	DeleteIDs(ids []uuid.UUID) error
 	CreateServer() error
 }
