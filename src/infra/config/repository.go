@@ -313,29 +313,19 @@ func (r *Repository) generateNewCRL(rsaPath string) error {
 	cmd := exec.Command("./easyrsa", "--batch", "--days=3650", "gen-crl")
 	cmd.Dir = rsaPath
 
+	pkiDir := rsaPath + "/pki/"
+
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("ошибка выполнения easyrsa: %w, output: %s", err, string(output))
 	}
 
-	pkiDir := rsaPath + "/pki"
-
-	file := filepath.Join("/etc/openvpn/server/", "crl.pem")
-
-	if err := os.Remove(file); err != nil {
-		return err
+	if err := exec.Command("rm", "-f", "/etc/openvpn/server/crl.pem").Run(); err != nil {
+		return fmt.Errorf("ошибка удаления старого crl.pem: %w", err)
 	}
 
-	// Копируем crl.pem в директорию OpenVPN
-	srcCRL := filepath.Join(pkiDir, "crl.pem")
-	dstCRL := "/etc/openvpn/server/crl.pem"
-
-	srcData, err := os.ReadFile(srcCRL)
-	if err != nil {
-		return fmt.Errorf("ошибка чтения crl.pem: %w", err)
-	}
-
-	if err := os.WriteFile(dstCRL, srcData, 0644); err != nil {
-		return fmt.Errorf("ошибка записи crl.pem: %w", err)
+	cmd = exec.Command("cp", fmt.Sprintf("%s/crl.pem", pkiDir), "/etc/openvpn/server/crl.pem")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("ошибка копирования crl.pem: %w, output: %s", err, string(output))
 	}
 
 	fmt.Println("✅ CRL успешно обновлен")
