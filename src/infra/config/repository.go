@@ -3,8 +3,14 @@ package config
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"vpn/src/core/settings"
 )
 
@@ -27,7 +33,7 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	)
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("Error create config")
+		return "", NewInvalidCreateConfig(err)
 	}
 
 	pathFile := path + configID.String() + ".ovpn"
@@ -51,14 +57,269 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		fmt.Println("Error delete config")
-		fmt.Errorf("Error delete config")
-		return err
+		return NewInvalidDeleteConfig(err)
 	}
 
 	return nil
 }
 
+func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
+	pkiDir := "/etc/openvpn/server/easy-rsa"
+	workDir := fmt.Sprintf("/tmp/ovpn_revoke_%d", os.Getpid())
+
+	clientStrings, clientSet := r.convertUUIDs(ids)
+
+	if err := os.MkdirAll(workDir, 0755); err != nil {
+		return fmt.Errorf("ошибка создания рабочей директории: %w", err)
+	}
+	defer os.RemoveAll(workDir)
+
+	fmt.Printf("Запуск отзыва %d клиентов...\n", len(clientStrings))
+
+	// Параллельный отзыв клиентов
+	successCount, err := r.revokeClients(clientStrings, pkiDir)
+	if err != nil {
+		return fmt.Errorf("ошибки отзыва: %w", err)
+	}
+
+	// Финальные операции
+	if err := r.finalizeCRL(clientSet, pkiDir); err != nil {
+		return err
+	}
+
+	fmt.Printf("✅ Успешно отозвано: %d клиентов\n", successCount)
+	return nil
+}
+
+// Конвертация UUID → строки и set
+func (r *Repository) convertUUIDs(ids []uuid.UUID) ([]string, map[string]struct{}) {
+	clientStrings := make([]string, len(ids))
+	clientSet := make(map[string]struct{}, len(ids))
+	for i, id := range ids {
+		s := id.String()
+		clientStrings[i] = s
+		clientSet[s] = struct{}{}
+	}
+	return clientStrings, clientSet
+}
+
+// Параллельный отзыв клиентов с использованием errgroup
+func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error) {
+	clientCount := len(clients)
+	if clientCount == 0 {
+		return 0, nil
+	}
+
+	parallel := r.min(r.max(clientCount/3, 4), 16)
+	sem := make(chan struct{}, parallel)
+
+	g, ctx := errgroup.WithContext(context.Background())
+
+	var successCount int32
+	var mu sync.Mutex
+	var errors []string
+
+	for _, client := range clients {
+		client := client
+
+		// Ожидание свободного слота с проверкой контекста
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			return int(atomic.LoadInt32(&successCount)), ctx.Err()
+		}
+
+		g.Go(func() error {
+			defer func() { <-sem }()
+
+			if err := r.revokeClient(client, pkiDir); err != nil {
+				mu.Lock()
+				errors = append(errors, err.Error())
+				mu.Unlock()
+				return nil // Не возвращаем ошибку, чтобы дождаться всех горутин
+			}
+
+			atomic.AddInt32(&successCount, 1)
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return int(atomic.LoadInt32(&successCount)), err
+	}
+
+	if len(errors) > 0 {
+		return int(atomic.LoadInt32(&successCount)), fmt.Errorf(strings.Join(errors, "; "))
+	}
+
+	return int(atomic.LoadInt32(&successCount)), nil
+}
+
+// Упрощенные финальные операции
+func (r *Repository) finalizeCRL(clientSet map[string]struct{}, pkiDir string) error {
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		return r.updateIndexFile(clientSet, pkiDir)
+	})
+
+	g.Go(func() error {
+		return r.generateNewCRL(pkiDir)
+	})
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("финальные операции: %w", err)
+	}
+	return nil
+}
+
+// Обновление index.txt - удаление записей отозванных клиентов
+func (r *Repository) updateIndexFile(clientSet map[string]struct{}, pkiDir string) error {
+	indexPath := filepath.Join(pkiDir, "index.txt")
+
+	data, err := os.ReadFile(indexPath)
+	if err != nil {
+		return fmt.Errorf("ошибка чтения index.txt: %w", err)
+	}
+
+	if err := r.backupFile(indexPath, data); err != nil {
+		return err
+	}
+
+	filteredLines := r.filterLinesByClient(data, clientSet)
+
+	if err := r.writeFileWithBackup(indexPath, filteredLines, data); err != nil {
+		return err
+	}
+
+	fmt.Println("✅ index.txt успешно обновлен")
+	return nil
+}
+
+// Создание бэкапа файла
+func (r *Repository) backupFile(path string, data []byte) error {
+	backupPath := path + ".backup"
+	if err := os.WriteFile(backupPath, data, 0644); err != nil {
+		return fmt.Errorf("ошибка создания бэкапа: %w", err)
+	}
+	return nil
+}
+
+// Фильтрация строк index.txt по clientSet
+func (r *Repository) filterLinesByClient(data []byte, clientSet map[string]struct{}) []string {
+	lines := strings.Split(string(data), "\n")
+	var result []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		cn := r.extractCN(line)
+		if cn == "" || !r.contains(clientSet, cn) {
+			result = append(result, line)
+		}
+	}
+	return result
+}
+
+// Извлечение CN из строки index.txt
+func (r *Repository) extractCN(line string) string {
+	if idx := strings.Index(line, "/CN="); idx != -1 {
+		cnPart := line[idx+4:]
+		return strings.Fields(cnPart)[0]
+	}
+	return ""
+}
+
+// Проверка наличия в set
+func (r *Repository) contains(clientSet map[string]struct{}, cn string) bool {
+	_, ok := clientSet[cn]
+	return ok
+}
+
+// Запись с восстановлением из бэкапа при ошибке
+func (r *Repository) writeFileWithBackup(path string, lines []string, backup []byte) error {
+	newContent := strings.Join(lines, "\n") + "\n"
+	if err := os.WriteFile(path, []byte(newContent), 0644); err != nil {
+		os.WriteFile(path, backup, 0644)
+		return fmt.Errorf("ошибка записи index.txt: %w", err)
+	}
+	return nil
+}
+
+// Генерация нового CRL
+func (r *Repository) generateNewCRL(pkiDir string) error {
+	// Генерируем CRL через easyrsa
+	cmd := exec.Command("./easyrsa", "--batch", "--days=3650", "gen-crl")
+	cmd.Dir = pkiDir
+
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("ошибка выполнения easyrsa: %w, output: %s", err, string(output))
+	}
+
+	// Копируем crl.pem в директорию OpenVPN
+	srcCRL := filepath.Join(pkiDir, "crl.pem")
+	dstCRL := "/etc/openvpn/server/crl.pem"
+
+	srcData, err := os.ReadFile(srcCRL)
+	if err != nil {
+		return fmt.Errorf("ошибка чтения crl.pem: %w", err)
+	}
+
+	if err := os.WriteFile(dstCRL, srcData, 0644); err != nil {
+		return fmt.Errorf("ошибка записи crl.pem: %w", err)
+	}
+
+	fmt.Println("✅ CRL успешно обновлен")
+	return nil
+}
+
+// Упрощенная функция отзыва
+func (r *Repository) revokeClient(client string, pkiDir string) error {
+	// Удаление файлов клиента
+	files := []string{
+		filepath.Join(pkiDir, "private", client+".key"),
+		filepath.Join(pkiDir, "reqs", client+".req"),
+		filepath.Join(pkiDir, "issued", client+".crt"),
+	}
+
+	var removed bool
+	for _, file := range files {
+		if err := os.Remove(file); err == nil {
+			removed = true
+		}
+	}
+
+	if !removed {
+		return fmt.Errorf("файлы клиента не найдены")
+	}
+
+	// Отключение клиента через management interface
+	cmd := exec.Command("sh", "-c",
+		fmt.Sprintf("echo 'kill %s\nexit' | nc -w 2 127.0.0.1 7505", client))
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("ошибка отключения клиента: %w", err)
+	}
+
+	fmt.Printf("✓ %s отозван\n", client)
+	return nil
+}
+
+// Вспомогательные функции
+func (r *Repository) min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (r *Repository) max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
 func (r *Repository) CreateServer() error {
 	config := settings.Config
 	script := config.ScriptName
@@ -68,8 +329,7 @@ func (r *Repository) CreateServer() error {
 		// скачать скрипт
 		cmd := exec.Command("curl", "-o", scriptPath, "https://raw.githubusercontent.com/Fox216540/openvpn-installer/main/openvpn-install.sh")
 		if err = cmd.Run(); err != nil {
-			fmt.Println("Error creating server")
-			return fmt.Errorf("failed to download script: %w", err)
+			return NewInvalidDownloadScript(err)
 		}
 	}
 
@@ -77,16 +337,14 @@ func (r *Repository) CreateServer() error {
 	cmd := exec.Command("chmod", "+x", scriptPath)
 
 	if err := cmd.Run(); err != nil {
-		fmt.Println("Error creating server 71")
-		return fmt.Errorf("failed chmod: %w", err)
+		return NewInvalidChmodScript(err)
 	}
 
 	cmd = exec.Command("sudo", "-E", "bash", scriptPath)
 	cmd.Env = os.Environ()
 
 	if err := cmd.Run(); err != nil {
-		fmt.Println("Error creating server 79")
-		return fmt.Errorf("failed create server: %w", err)
+		return NewInvalidCreateServer(err)
 	}
 
 	return nil
