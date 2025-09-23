@@ -88,6 +88,10 @@ func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
 		return err
 	}
 
+	if err := r.disconnectClients(clientStrings); err != nil {
+		return fmt.Errorf("ошибки отключения клиентов: %w", err)
+	}
+
 	fmt.Printf("✅ Успешно отозвано: %d клиентов\n", successCount)
 	return nil
 }
@@ -154,6 +158,64 @@ func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error)
 	}
 
 	return int(atomic.LoadInt32(&successCount)), nil
+}
+
+func (r *Repository) disconnectClients(clients []string) error {
+	clientCount := len(clients)
+	if clientCount == 0 {
+		return nil
+	}
+
+	parallel := r.min(r.max(clientCount/3, 4), 16)
+	sem := make(chan struct{}, parallel)
+
+	g, ctx := errgroup.WithContext(context.Background())
+	var errors []string
+	var mu sync.Mutex
+
+	for _, client := range clients {
+		client := client
+
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		g.Go(func() error {
+			defer func() { <-sem }()
+
+			if err := r.disconnectClient(client); err != nil {
+				mu.Lock()
+				errors = append(errors, err.Error())
+				mu.Unlock()
+				return nil
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf(strings.Join(errors, "; "))
+	}
+
+	return nil
+}
+
+func (r *Repository) disconnectClient(client string) error {
+	cmd := exec.Command("sh", "-c",
+		fmt.Sprintf("echo 'kill %s\nexit' | nc -w 2 127.0.0.1 7505", client))
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("ошибка отключения клиента %s: %w", client, err)
+	}
+
+	fmt.Printf("✓ Клиент %s отключен\n", client)
+	return nil
 }
 
 // Упрощенные финальные операции
@@ -302,14 +364,6 @@ func (r *Repository) revokeClient(client string, pkiDir string) error {
 
 	if !removed {
 		return fmt.Errorf("файлы клиента не найдены")
-	}
-
-	// Отключение клиента через management interface
-	cmd := exec.Command("sh", "-c",
-		fmt.Sprintf("echo 'kill %s\nexit' | nc -w 2 127.0.0.1 7505", client))
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("ошибка отключения клиента: %w", err)
 	}
 
 	fmt.Printf("✓ %s отозван\n", client)
