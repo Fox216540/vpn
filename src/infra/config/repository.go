@@ -396,6 +396,8 @@ func (r *Repository) CreateServer() error {
 	}
 
 	cmd = exec.Command("sudo", "-E", "bash", scriptPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
 	if err := cmd.Run(); err != nil {
