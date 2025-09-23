@@ -93,7 +93,7 @@ func (r *Repository) startWriterCPUPercent() {
 	interval, err := strconv.Atoi(intervalStr)
 	if err != nil {
 		//TODO: log error ЛОГГЕР
-		log.Fatalf("Error converting connections interval: %v", err)
+		log.Printf("Error converting connections interval: %v", err)
 	}
 
 	for {
@@ -117,7 +117,7 @@ func (r *Repository) startWriterMemoryPercent() {
 
 	if err != nil {
 		//TODO: log error ЛОГГЕР
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	for {
@@ -175,7 +175,8 @@ func (r *Repository) startWriterGetActiveConnections() {
 		count, err := r.readFile("/run/openvpn-server/status-server.log")
 		if err != nil {
 			//TODO: log error ЛОГГЕР
-			log.Fatalf("Error reading file: %v", err)
+			log.Println("Error reading file: %v", err)
+			continue
 		}
 		r.mu.Lock()
 		r.data.ActiveConnections = count
