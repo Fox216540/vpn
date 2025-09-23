@@ -328,6 +328,8 @@ func (r *Repository) generateNewCRL(rsaPath string) error {
 		return fmt.Errorf("ошибка копирования crl.pem: %w, output: %s", err, string(output))
 	}
 
+	cmd = exec.Command("chown", "nobody:nogroup", "/etc/openvpn/server/crl.pem")
+
 	fmt.Println("✅ CRL успешно обновлен")
 	return nil
 }
