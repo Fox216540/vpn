@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"bufio"
+	"errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
 	"log"
@@ -33,6 +34,7 @@ func NewRepository() *Repository {
 func (r *Repository) searchTun(nameTun string) (net.IOCountersStat, error) {
 	counters, err := net.IOCounters(true)
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		log.Fatalf("Error getting IO counters: %v", err)
 	}
 	for _, c := range counters {
@@ -40,7 +42,8 @@ func (r *Repository) searchTun(nameTun string) (net.IOCountersStat, error) {
 			return c, nil
 		}
 	}
-	return net.IOCountersStat{}, nil
+	//TODO: log error ЛОГГЕР
+	return net.IOCountersStat{}, errors.New("tun0 not found")
 }
 
 func (r *Repository) startWriterTraffic() {
@@ -50,12 +53,14 @@ func (r *Repository) startWriterTraffic() {
 
 	trafficInterval, err := strconv.Atoi(trafficIntervalStr)
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		log.Fatalf("Error converting traffic interval: %v", err)
 	}
 
 	for {
 		c, err := r.searchTun("tun0")
 		if err != nil {
+			//TODO: log error ЛОГГЕР
 			log.Fatalf("Error getting IO counters: %v", err)
 		}
 
@@ -76,16 +81,17 @@ func (r *Repository) startWriterTraffic() {
 	}
 }
 
-func (r *Repository) GetTrafficUsage() (down, up float64, err error) {
+func (r *Repository) GetTrafficUsage() (down, up float64) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.data.MbpsDown, r.data.MbpsUp, nil
+	return r.data.MbpsDown, r.data.MbpsUp
 }
 
 func (r *Repository) startWriterCPUPercent() {
 	intervalStr := settings.Config.CPUInterval
 	interval, err := strconv.Atoi(intervalStr)
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		log.Fatalf("Error converting connections interval: %v", err)
 	}
 
@@ -97,10 +103,10 @@ func (r *Repository) startWriterCPUPercent() {
 	}
 }
 
-func (r *Repository) GetCPUPercentUsage() (float64, error) {
+func (r *Repository) GetCPUPercentUsage() float64 {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.data.CPUPercentUsage, nil
+	return r.data.CPUPercentUsage
 }
 
 func (r *Repository) startWriterMemoryPercent() {
@@ -109,12 +115,14 @@ func (r *Repository) startWriterMemoryPercent() {
 	interval, err := strconv.Atoi(intervalStr)
 
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		log.Fatal(err)
 	}
 
 	for {
 		v, err := mem.VirtualMemory()
 		if err != nil {
+			//TODO: log error ЛОГГЕР
 			log.Println("error getting memory:", err)
 			continue
 		}
@@ -127,15 +135,16 @@ func (r *Repository) startWriterMemoryPercent() {
 	}
 }
 
-func (r *Repository) GetMemoryPercentUsage() (float64, error) {
+func (r *Repository) GetMemoryPercentUsage() float64 {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.data.MemoryPercentUsage, nil
+	return r.data.MemoryPercentUsage
 }
 
 func (r *Repository) readFile(path string) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		return 0, err
 	}
 	defer file.Close()
@@ -157,12 +166,14 @@ func (r *Repository) startWriterGetActiveConnections() {
 	interval, err := strconv.Atoi(intervalStr)
 
 	if err != nil {
+		//TODO: log error ЛОГГЕР
 		log.Fatalf("Error converting connections interval: %v", err)
 	}
 
 	for {
 		count, err := r.readFile("/run/openvpn-server/status-server.log")
 		if err != nil {
+			//TODO: log error ЛОГГЕР
 			log.Fatalf("Error reading file: %v", err)
 		}
 		r.mu.Lock()
@@ -172,8 +183,8 @@ func (r *Repository) startWriterGetActiveConnections() {
 	}
 }
 
-func (r *Repository) GetActiveConnections() (int, error) {
+func (r *Repository) GetActiveConnections() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.data.ActiveConnections, nil
+	return r.data.ActiveConnections
 }
