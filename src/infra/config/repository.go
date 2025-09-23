@@ -261,6 +261,12 @@ func (r *Repository) generateNewCRL(rsaPath string) error {
 
 	pkiDir := rsaPath + "/pki"
 
+	file := filepath.Join("/etc/openvpn/server/", "crl.pem")
+
+	if err := os.Remove(file); err != nil {
+		return err
+	}
+
 	// Копируем crl.pem в директорию OpenVPN
 	srcCRL := filepath.Join(pkiDir, "crl.pem")
 	dstCRL := "/etc/openvpn/server/crl.pem"
