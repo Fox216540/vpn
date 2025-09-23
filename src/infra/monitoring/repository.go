@@ -61,7 +61,7 @@ func (r *Repository) startWriterTraffic() {
 		c, err := r.searchTun("tun0")
 		if err != nil {
 			//TODO: log error ЛОГГЕР
-			log.Printf("Error getting IO counters: %v", err)
+			//log.Printf("Error getting IO counters: %v", err)
 			continue
 		}
 
@@ -124,7 +124,7 @@ func (r *Repository) startWriterMemoryPercent() {
 		v, err := mem.VirtualMemory()
 		if err != nil {
 			//TODO: log error ЛОГГЕР
-			log.Println("error getting memory:", err)
+			//log.Println("error getting memory:", err)
 			continue
 		}
 
@@ -175,7 +175,7 @@ func (r *Repository) startWriterGetActiveConnections() {
 		count, err := r.readFile("/run/openvpn-server/status-server.log")
 		if err != nil {
 			//TODO: log error ЛОГГЕР
-			log.Println("Error reading file: %v", err)
+			//log.Println("Error reading file: %v", err)
 			continue
 		}
 		r.mu.Lock()
