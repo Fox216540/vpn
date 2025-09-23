@@ -2,11 +2,8 @@ package interceptor
 
 import (
 	"context"
-	"fmt"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 	"strings"
 	"vpn/src/infra/hasher"
 )
@@ -21,20 +18,20 @@ func AuthUnaryInterceptor(h *hasher.Hasher) grpc.UnaryServerInterceptor {
 		if info.FullMethod == "/config.ConfigService/StartServer" {
 			md, ok := metadata.FromIncomingContext(ctx)
 			if !ok {
-				fmt.Println("25")
-				return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+				//TODO: добавить map
+				return nil, NewMissingMetadata(nil)
 			}
 
 			authHeader := md.Get("authorization")
 			if len(authHeader) == 0 || !strings.HasPrefix(authHeader[0], "Bearer ") {
-				fmt.Println("31")
-				return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
+				//TODO: добавить map
+				return nil, NewInvalidAuthHeader(nil)
 			}
 
 			tokenReceived := strings.TrimPrefix(authHeader[0], "Bearer ")
 			if err := h.Verify(tokenReceived); err != nil {
-				fmt.Println("37")
-				return nil, status.Errorf(codes.Unauthenticated, "invalid token")
+				//TODO: добавить map
+				return nil, NewInvalidToken(err)
 			}
 		}
 		return handler(ctx, req)
