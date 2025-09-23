@@ -9,7 +9,16 @@ import "google/protobuf/empty.proto";
 service ConfigService {
     rpc AddClient(AddClientRequest) returns (AddClientResponse);
     rpc DeleteClient(DeleteClientRequest) returns (DeleteClientResponse);
+    rpc DeleteClients(DeleteClientsRequest) returns (DeleteClientsResponse);
     rpc StartServer(google.protobuf.Empty) returns (StartServerResponse);
+}
+
+message DeleteClientsRequest {
+    repeated string ids = 1;
+}
+
+message DeleteClientsResponse {
+    string message = 1;
 }
 
 message AddClientRequest {
