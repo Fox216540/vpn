@@ -331,7 +331,7 @@ func (r *Repository) contains(clientSet map[string]struct{}, cn string) bool {
 
 // Запись с восстановлением из бэкапа при ошибке
 func (r *Repository) writeFileWithBackup(path string, lines []string, backup []byte) error {
-	newContent := strings.Join(lines, "\n") + "\n"
+	newContent := strings.Join(lines, "\n")
 	if err := os.WriteFile(path, []byte(newContent), 0644); err != nil {
 		os.WriteFile(path, backup, 0644)
 		return fmt.Errorf("ошибка записи index.txt: %w", err)
