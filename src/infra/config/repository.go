@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 	"vpn/src/core/settings"
 )
@@ -32,8 +31,6 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	cmd.Env = append(os.Environ(),
 		"CLIENT_NAME="+configID.String(),
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
 		return "", NewInvalidCreateConfig(err)
@@ -56,9 +53,6 @@ func (r *Repository) Delete(configID uuid.UUID) error {
 		"CLIENT_NAME="+configID.String(),
 	)
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
 	if err := cmd.Run(); err != nil {
 		return NewInvalidDeleteConfig(err)
 	}
@@ -74,28 +68,25 @@ func (r *Repository) DeleteIDs(ids []uuid.UUID) error {
 	clientStrings, clientSet := r.convertUUIDs(ids)
 
 	if err := os.MkdirAll(workDir, 0755); err != nil {
-		return fmt.Errorf("ошибка создания рабочей директории: %w", err)
+		return NewInvalidMkdir(err)
 	}
 	defer os.RemoveAll(workDir)
 
-	fmt.Printf("Запуск отзыва %d клиентов...\n", len(clientStrings))
-
 	// Параллельный отзыв клиентов
-	successCount, err := r.revokeClients(clientStrings, pkiDir)
-	if err != nil {
-		return fmt.Errorf("ошибки отзыва: %w", err)
+
+	if err := r.revokeClients(clientStrings, pkiDir); err != nil {
+		return NewInvalidRevokeClients(err)
 	}
 
 	// Финальные операции
 	if err := r.finalizeCRL(clientSet, rsaPath); err != nil {
-		return err
+		return NewInvalidFinalizeCRL(err)
 	}
 
 	if err := r.disconnectClients(clientStrings); err != nil {
-		return fmt.Errorf("ошибки отключения клиентов: %w", err)
+		return NewInvalidDisconnectClients(err)
 	}
 
-	fmt.Printf("✅ Успешно отозвано: %d клиентов\n", successCount)
 	return nil
 }
 
@@ -112,18 +103,17 @@ func (r *Repository) convertUUIDs(ids []uuid.UUID) ([]string, map[string]struct{
 }
 
 // Параллельный отзыв клиентов с использованием errgroup
-func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error) {
+func (r *Repository) revokeClients(clients []string, pkiDir string) error {
 	clientCount := len(clients)
 	if clientCount == 0 {
-		return 0, nil
+		return nil
 	}
 
-	parallel := r.min(r.max(clientCount/3, 4), 16)
+	parallel := min(max(clientCount/3, 4), 16)
 	sem := make(chan struct{}, parallel)
 
 	g, ctx := errgroup.WithContext(context.Background())
 
-	var successCount int32
 	var mu sync.Mutex
 	var errors []string
 
@@ -134,7 +124,7 @@ func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error)
 		select {
 		case sem <- struct{}{}:
 		case <-ctx.Done():
-			return int(atomic.LoadInt32(&successCount)), ctx.Err()
+			return ctx.Err()
 		}
 
 		g.Go(func() error {
@@ -146,21 +136,19 @@ func (r *Repository) revokeClients(clients []string, pkiDir string) (int, error)
 				mu.Unlock()
 				return nil // Не возвращаем ошибку, чтобы дождаться всех горутин
 			}
-
-			atomic.AddInt32(&successCount, 1)
 			return nil
 		})
 	}
 
 	if err := g.Wait(); err != nil {
-		return int(atomic.LoadInt32(&successCount)), err
+		return NewInvalidRevokeClients(err)
 	}
 
 	if len(errors) > 0 {
-		return int(atomic.LoadInt32(&successCount)), fmt.Errorf(strings.Join(errors, "; "))
+		return fmt.Errorf(strings.Join(errors, "; "))
 	}
 
-	return int(atomic.LoadInt32(&successCount)), nil
+	return nil
 }
 
 func (r *Repository) disconnectClients(clients []string) error {
@@ -169,7 +157,7 @@ func (r *Repository) disconnectClients(clients []string) error {
 		return nil
 	}
 
-	parallel := r.min(r.max(clientCount/3, 4), 16)
+	parallel := min(max(clientCount/3, 4), 16)
 	sem := make(chan struct{}, parallel)
 
 	g, ctx := errgroup.WithContext(context.Background())
@@ -217,7 +205,6 @@ func (r *Repository) disconnectClient(client string) error {
 		return fmt.Errorf("ошибка отключения клиента %s: %w", client, err)
 	}
 
-	fmt.Printf("✓ Клиент %s отключен\n", client)
 	return nil
 }
 
@@ -255,7 +242,6 @@ func (r *Repository) updateIndexFile(clientSet map[string]struct{}, pkiDir strin
 		return err
 	}
 
-	fmt.Println("✅ index.txt успешно обновлен")
 	return nil
 }
 
@@ -366,7 +352,6 @@ func (r *Repository) generateNewCRL(rsaPath string) error {
 		return fmt.Errorf("error chown")
 	}
 
-	fmt.Println("✅ CRL успешно обновлен")
 	return nil
 }
 
@@ -389,27 +374,13 @@ func (r *Repository) revokeClient(client string, pkiDir string) error {
 	}
 
 	if !removed {
-		return fmt.Errorf("файлы клиента не найдены")
+		return fmt.Errorf("file not found")
 	}
 
-	fmt.Printf("✓ %s отозван\n", client)
 	return nil
 }
 
-// Вспомогательные функции
-func (r *Repository) min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func (r *Repository) max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
+// Вспомогательные функци
 func (r *Repository) CreateServer() error {
 	config := settings.Config
 	script := config.ScriptName
@@ -436,8 +407,7 @@ func (r *Repository) CreateServer() error {
 	}
 
 	cmd = exec.Command("sudo", "-E", "bash", scriptPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
 	cmd.Env = os.Environ()
 	fmt.Println(os.Environ())
 	fmt.Println(cmd.Env)
