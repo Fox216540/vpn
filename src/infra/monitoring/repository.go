@@ -2,10 +2,8 @@ package monitoring
 
 import (
 	"bufio"
-	"errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -31,19 +29,14 @@ func NewRepository() *Repository {
 	return r
 }
 
-func (r *Repository) searchTun(nameTun string) (net.IOCountersStat, error) {
-	counters, err := net.IOCounters(true)
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		log.Printf("Error getting IO counters: %v", err)
-	}
+func (r *Repository) searchTun(nameTun string) net.IOCountersStat {
+	counters, _ := net.IOCounters(true)
 	for _, c := range counters {
 		if c.Name == nameTun {
-			return c, nil
+			return c
 		}
 	}
-	//TODO: log error ЛОГГЕР
-	return net.IOCountersStat{}, errors.New("tun0 not found")
+	return net.IOCountersStat{}
 }
 
 func (r *Repository) startWriterTraffic() {
@@ -51,19 +44,10 @@ func (r *Repository) startWriterTraffic() {
 
 	trafficIntervalStr := settings.Config.TrafficInterval
 
-	trafficInterval, err := strconv.Atoi(trafficIntervalStr)
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		log.Fatalf("Error converting traffic interval: %v", err)
-	}
+	trafficInterval, _ := strconv.Atoi(trafficIntervalStr)
 
 	for {
-		c, err := r.searchTun("tun0")
-		if err != nil {
-			//TODO: log error ЛОГГЕР
-			//log.Printf("Error getting IO counters: %v", err)
-			continue
-		}
+		c := r.searchTun("tun0")
 
 		rxDiff := c.BytesRecv - prevRx
 		txDiff := c.BytesSent - prevTx
@@ -90,11 +74,7 @@ func (r *Repository) GetTrafficUsage() (down, up float64) {
 
 func (r *Repository) startWriterCPUPercent() {
 	intervalStr := settings.Config.CPUInterval
-	interval, err := strconv.Atoi(intervalStr)
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		log.Printf("Error converting connections interval: %v", err)
-	}
+	interval, _ := strconv.Atoi(intervalStr)
 
 	for {
 		percent, _ := cpu.Percent(time.Duration(interval)*time.Second, false) // среднее за 1 секунду
@@ -113,21 +93,10 @@ func (r *Repository) GetCPUPercentUsage() float64 {
 func (r *Repository) startWriterMemoryPercent() {
 	intervalStr := settings.Config.MemoryInterval
 
-	interval, err := strconv.Atoi(intervalStr)
-
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		log.Println(err)
-	}
+	interval, _ := strconv.Atoi(intervalStr)
 
 	for {
-		v, err := mem.VirtualMemory()
-		if err != nil {
-			//TODO: log error ЛОГГЕР
-			//log.Println("error getting memory:", err)
-			continue
-		}
-
+		v, _ := mem.VirtualMemory()
 		r.mu.Lock()
 		r.data.MemoryPercentUsage = v.UsedPercent
 		r.mu.Unlock()
@@ -142,12 +111,8 @@ func (r *Repository) GetMemoryPercentUsage() float64 {
 	return r.data.MemoryPercentUsage
 }
 
-func (r *Repository) readFile(path string) (int, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		return 0, err
-	}
+func (r *Repository) readFile(path string) int {
+	file, _ := os.Open(path)
 	defer file.Close()
 
 	count := 0
@@ -158,26 +123,16 @@ func (r *Repository) readFile(path string) (int, error) {
 			count++
 		}
 	}
-	return count, nil
+	return count
 }
 
 func (r *Repository) startWriterGetActiveConnections() {
 	intervalStr := settings.Config.ConnectionsInterval
 
-	interval, err := strconv.Atoi(intervalStr)
-
-	if err != nil {
-		//TODO: log error ЛОГГЕР
-		log.Fatalf("Error converting connections interval: %v", err)
-	}
+	interval, _ := strconv.Atoi(intervalStr)
 
 	for {
-		count, err := r.readFile("/run/openvpn-server/status-server.log")
-		if err != nil {
-			//TODO: log error ЛОГГЕР
-			//log.Println("Error reading file: %v", err)
-			continue
-		}
+		count := r.readFile("/run/openvpn-server/status-server.log")
 		r.mu.Lock()
 		r.data.ActiveConnections = count
 		r.mu.Unlock()
