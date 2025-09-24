@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  vpn:
+    build: .
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./tls:/tls:ro
+      - ./logs:/logs
+      # монтируем сертификаты внутрь контейнера
+    environment:
+      - TLS_CERT_FILE=/tls/server.crt
+      - TLS_KEY_FILE=/tls/server.key
