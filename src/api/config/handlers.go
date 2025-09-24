@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"vpn/src/api/config/di"
 	pb "vpn/src/api/config/proto"
 	"vpn/src/app/config"
+	"vpn/src/core/mapError"
 )
 
 type Handler struct {
@@ -27,11 +26,11 @@ func NewHandler() *Handler {
 func (h *Handler) AddClient(ctx context.Context, req *pb.AddClientRequest) (*pb.AddClientResponse, error) {
 	uuidID, err := uuid.Parse(req.Id)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	file, err := h.service.CreateConfig(uuidID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	return &pb.AddClientResponse{
 		Message: "Good",
@@ -43,10 +42,10 @@ func (h *Handler) AddClient(ctx context.Context, req *pb.AddClientRequest) (*pb.
 func (h *Handler) DeleteClient(ctx context.Context, req *pb.DeleteClientRequest) (*pb.DeleteClientResponse, error) {
 	uuidID, err := uuid.Parse(req.Id)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	if err = h.service.DeleteConfig(uuidID); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	return &pb.DeleteClientResponse{
 		Message: "Good",
@@ -65,8 +64,7 @@ func (h *Handler) DeleteClients(ctx context.Context, req *pb.DeleteClientsReques
 	}
 
 	if err := h.service.DeleteConfigs(uuidIDs); err != nil {
-		fmt.Println(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	return &pb.DeleteClientsResponse{
 		Message: "Good",
@@ -75,7 +73,7 @@ func (h *Handler) DeleteClients(ctx context.Context, req *pb.DeleteClientsReques
 
 func (h *Handler) StartServer(ctx context.Context, req *emptypb.Empty) (*pb.StartServerResponse, error) {
 	if err := h.service.StartServerConfig(); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, mapError.MapError(err)
 	}
 	return &pb.StartServerResponse{
 		Message: "Good",
