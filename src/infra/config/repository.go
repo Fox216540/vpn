@@ -287,9 +287,14 @@ func (r *Repository) markRevokedByClient(data []byte, clientSet map[string]struc
 		}
 
 		// CN есть и клиент в списке → ревокация
-		serial := r.extractSerial(line)
-		newLine := fmt.Sprintf("R\t%s\t%s\t%s", now, serial, cn)
-		result = append(result, newLine)
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
+			parts[0] = "R" // меняем статус
+			parts[1] = now // ставим дату отзыва
+			line = strings.Join(parts, "\t")
+		}
+
+		result = append(result, line)
 	}
 
 	return result
