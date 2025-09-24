@@ -70,6 +70,20 @@ func (e *InvalidDeleteConfig) Error() string {
 	return e.ConfigError.Error()
 }
 
+type InvalidDeleteConfigs struct {
+	*ConfigError
+}
+
+func NewInvalidDeleteConfigs(err error) *InvalidDeleteConfigs {
+	return &InvalidDeleteConfigs{
+		ConfigError: NewConfigError("Invalid delete IDs", err),
+	}
+}
+
+func (e *InvalidDeleteConfigs) Error() string {
+	return e.ConfigError.Error()
+}
+
 type InvalidStartServer struct {
 	*ConfigError
 }

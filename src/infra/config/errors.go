@@ -89,3 +89,59 @@ func NewInvalidCreateServer(err error) *InvalidCreateServer {
 func (e *InvalidCreateServer) Error() string {
 	return e.ConfigError.Error()
 }
+
+type InvalidMkdir struct {
+	*ConfigError
+}
+
+func NewInvalidMkdir(err error) *InvalidMkdir {
+	return &InvalidMkdir{
+		ConfigError: NewConfigError("Invalid mkdir", err),
+	}
+}
+
+func (e *InvalidMkdir) Error() string {
+	return e.ConfigError.Error()
+}
+
+type InvalidRevokeClients struct {
+	*ConfigError
+}
+
+func NewInvalidRevokeClients(err error) *InvalidRevokeClients {
+	return &InvalidRevokeClients{
+		ConfigError: NewConfigError("Invalid revoke clients", err),
+	}
+}
+
+func (e *InvalidRevokeClients) Error() string {
+	return e.ConfigError.Error()
+}
+
+type InvalidFinalizeCRL struct {
+	*ConfigError
+}
+
+func NewInvalidFinalizeCRL(err error) *InvalidFinalizeCRL {
+	return &InvalidFinalizeCRL{
+		ConfigError: NewConfigError("Invalid finalize CRL", err),
+	}
+}
+
+func (e *InvalidFinalizeCRL) Error() string {
+	return e.ConfigError.Error()
+}
+
+type InvalidDisconnectClients struct {
+	*ConfigError
+}
+
+func NewInvalidDisconnectClients(err error) *InvalidDisconnectClients {
+	return &InvalidDisconnectClients{
+		ConfigError: NewConfigError("Invalid disconnect clients", err),
+	}
+}
+
+func (e *InvalidDisconnectClients) Error() string {
+	return e.ConfigError.Error()
+}
