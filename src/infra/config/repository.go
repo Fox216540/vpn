@@ -289,8 +289,8 @@ func (r *Repository) markRevokedByClient(data []byte, clientSet map[string]struc
 		// CN есть и клиент в списке → ревокация
 		parts := strings.Fields(line)
 		if len(parts) >= 2 {
-			parts[0] = "R" // меняем статус
-			parts[1] = now // ставим дату отзыва
+			parts[0] = "R"                   // меняем статус
+			parts[1] = parts[1] + "\t" + now // ставим дату отзыва
 			line = strings.Join(parts, "\t")
 		}
 
