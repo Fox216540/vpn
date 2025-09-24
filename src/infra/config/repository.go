@@ -289,9 +289,15 @@ func (r *Repository) markRevokedByClient(data []byte, clientSet map[string]struc
 		// CN есть и клиент в списке → ревокация
 		parts := strings.Fields(line)
 		if len(parts) >= 2 {
-			parts[0] = "R"                   // меняем статус
-			parts[1] = parts[1] + "\t" + now // ставим дату отзыва
-			line = strings.Join(parts, "\t")
+			newParts := make([]string, 6)
+			newParts[0] = "R"
+			newParts[1] = parts[1] // дата окончания
+			newParts[2] = now      // дата отзыва
+			newParts[3] = parts[2] // серийный номер
+			newParts[4] = parts[3] // имя файла
+			newParts[5] = parts[4] // DN
+
+			line = strings.Join(newParts, "\t")
 		}
 
 		result = append(result, line)
