@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 	"vpn/src/core/settings"
 )
 
@@ -246,7 +247,7 @@ func (r *Repository) updateIndexFile(clientSet map[string]struct{}, pkiDir strin
 		return err
 	}
 
-	filteredLines := r.filterLinesByClient(data, clientSet)
+	filteredLines := r.markRevokedByClient(data, clientSet)
 
 	if err := r.writeFileWithBackup(indexPath, filteredLines, data); err != nil {
 		return err
@@ -266,20 +267,40 @@ func (r *Repository) backupFile(path string, data []byte) error {
 }
 
 // Фильтрация строк index.txt по clientSet
-func (r *Repository) filterLinesByClient(data []byte, clientSet map[string]struct{}) []string {
+func (r *Repository) markRevokedByClient(data []byte, clientSet map[string]struct{}) []string {
 	lines := strings.Split(string(data), "\n")
 	var result []string
+	now := time.Now().UTC().Format("060102150405Z") // дата отзыва в формате YYMMDDHHMMSSZ
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
+			result = append(result, line)
 			continue
 		}
+
 		cn := r.extractCN(line)
 		if cn == "" || !r.contains(clientSet, cn) {
+			// Если CN не найден или клиент не в списке — оставляем строку как есть
 			result = append(result, line)
+			continue
 		}
+
+		// CN есть и клиент в списке → ревокация
+		serial := r.extractSerial(line)
+		newLine := fmt.Sprintf("R\t%s\t%s\t%s", now, serial, cn)
+		result = append(result, newLine)
 	}
+
 	return result
+}
+
+func (r *Repository) extractSerial(line string) string {
+	fields := strings.Fields(line)
+	if len(fields) < 3 {
+		return "" // нет serial
+	}
+	return fields[2]
 }
 
 // Извлечение CN из строки index.txt
