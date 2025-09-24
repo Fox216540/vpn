@@ -2,7 +2,6 @@ package settings
 
 import (
 	"github.com/joho/godotenv"
-	"log"
 	"os"
 )
 
@@ -19,10 +18,7 @@ type Setting struct {
 }
 
 func NewSetting() *Setting {
-	err := godotenv.Load() // по умолчанию ищет файл .env в текущей папке
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	_ = godotenv.Load() // игнорируем ошибку
 	return &Setting{
 		FilePath:            os.Getenv("FILE_PATH"),
 		HomePath:            os.Getenv("HOME_PATH"),

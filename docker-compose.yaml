@@ -4,6 +4,8 @@ services:
     build: .
     ports:
       - "50051:50051"
+    env_file:
+      - ".env"
     volumes:
       - ./tls:/tls:ro
       - ./logs:/logs
