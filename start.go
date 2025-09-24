@@ -4,11 +4,13 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
 	"vpn/src/api/config"
 	pbConfig "vpn/src/api/config/proto"
 	"vpn/src/api/monitoring"
 	pbMonitoring "vpn/src/api/monitoring/proto"
 	"vpn/src/core/interceptor"
+	"vpn/src/core/logger"
 	"vpn/src/infra/hasher"
 )
 
@@ -17,6 +19,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	defer file.Close()
+
+	// Инициализируем глобальный логгер
+	logger.InitLogger(file)
 
 	configHandler := config.NewHandler()
 	h := hasher.NewHasher()
