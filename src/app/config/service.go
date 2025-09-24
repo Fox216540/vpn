@@ -23,7 +23,7 @@ func (s *service) CreateConfig(configID uuid.UUID) ([]byte, error) {
 	if err != nil {
 		var serverError *exception.ServerError
 		if errors.As(err, &serverError) {
-			return nil, serverError
+			return nil, err
 		}
 		return nil, NewInvalidCreateConfig(err)
 	}
@@ -45,7 +45,7 @@ func (s *service) DeleteConfig(configID uuid.UUID) error {
 	if err := s.r.Delete(configID); err != nil {
 		var serverError *exception.ServerError
 		if errors.As(err, &serverError) {
-			return serverError
+			return err
 		}
 		return NewInvalidDeleteConfig(err)
 	}
@@ -54,7 +54,11 @@ func (s *service) DeleteConfig(configID uuid.UUID) error {
 
 func (s *service) DeleteConfigs(configIDs []uuid.UUID) error {
 	if err := s.r.DeleteIDs(configIDs); err != nil {
-		return err
+		var serverError *exception.ServerError
+		if errors.As(err, &serverError) {
+			return err
+		}
+		return NewInvalidDeleteConfigs(err)
 	}
 	return nil
 }
@@ -63,7 +67,7 @@ func (s *service) StartServerConfig() error {
 	if err := s.r.CreateServer(); err != nil {
 		var serverError *exception.ServerError
 		if errors.As(err, &serverError) {
-			return serverError
+			return err
 		}
 		return NewInvalidStartServer(err)
 	}
