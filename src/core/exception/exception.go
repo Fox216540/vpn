@@ -63,22 +63,6 @@ func NewUnauthenticated(msg, domain string, err error) *Unauthenticated {
 	}
 }
 
-type PermissionDenied struct {
-	*DomainError
-}
-
-func (e PermissionDenied) Error() string {
-	return e.DomainError.Error()
-}
-
-func (e PermissionDenied) Unwrap() error { return e.DomainError }
-
-func NewPermissionDenied(msg, domain string, err error) *PermissionDenied {
-	return &PermissionDenied{
-		DomainError: NewDomainException(msg, domain, err),
-	}
-}
-
 type BadRequestError struct {
 	*DomainError
 }
