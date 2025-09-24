@@ -3,15 +3,25 @@
 # ========================
 FROM golang:1.24-alpine AS builder
 
-WORKDIR /build
+WORKDIR /app
 
-# Кэширование зависимостей
+# Переменные для Go сборки, чтобы TMPDIR и GOCACHE не забивали /tmp
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOCACHE=/tmp/go-cache
+ENV TMPDIR=/tmp/go-tmp
+
+RUN mkdir -p $GOCACHE $TMPDIR
+
+# Кэшируем зависимости
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod tidy
 
-# Копируем и собираем
+# Копируем исходники
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags='-w -s' -o main .
+
+# Собираем бинарник
+RUN go build -ldflags='-w -s' -o main .
 
 # ========================
 # 2. Final stage
@@ -19,9 +29,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags='-w -s' -o main .
 FROM gcr.io/distroless/base-debian11
 
 WORKDIR /
-COPY --from=builder /build/main .
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
+# Копируем бинарник из билд-стадии
+COPY --from=builder /app/main ./
+
+# Монтируем сертификаты через volume (не копируем внутрь)
+# CMD использует бинарник
 EXPOSE 50051
-
 CMD ["/main"]
