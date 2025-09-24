@@ -32,6 +32,8 @@ func (r *Repository) Create(configID uuid.UUID) (string, error) {
 	cmd.Env = append(os.Environ(),
 		"CLIENT_NAME="+configID.String(),
 	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
 		return "", NewInvalidCreateConfig(err)
