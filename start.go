@@ -40,7 +40,7 @@ func main() {
 	keyFile := os.Getenv("TLS_KEY_FILE")
 	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
-		//log.Fatalf("failed to load TLS keys: %v", err)
+		log.Println("failed to load TLS keys: %v", err)
 	}
 
 	// Создаём gRPC сервер с TLS и интерцептором

@@ -11,5 +11,5 @@ services:
       - ./logs:/logs
       # монтируем сертификаты внутрь контейнера
     environment:
-      - TLS_CERT_FILE=/tls/server.crt
-      - TLS_KEY_FILE=/tls/server.key
+      - TLS_CERT_FILE=/tls/vpn.crt
+      - TLS_KEY_FILE=/tls/vpn.key
